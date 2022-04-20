@@ -4,23 +4,23 @@ from core import app, db
 from flask import render_template, request, flash, redirect, url_for
 from core.utils import *
 
-
-
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
         url = request.form['url']
-        short_id = request.form['custom_id']
+        #short_id = request.form['custom_id']
 
-        if short_id and ShortUrls.query.filter_by(short_id=short_id).first() is not None:
-            flash('Please enter different custom id!')
-            return redirect(url_for('index'))
+        #if short_id and ShortUrls.query.filter_by(short_id=short_id).first() is not None:
+        #    flash('Please enter different custom id!')
+        #    return redirect(url_for('index'))
 
         if not url:
             flash('The URL is required!')
             return redirect(url_for('index'))
+        short_id = generate_short_id(url, 6)
 
-        if not short_id:
+        # Check the short_id does not exist
+        while not ShortUrls.query.filter_by(short_id=short_id):
             short_id = generate_short_id(url, 6)
 
         new_link = ShortUrls(
@@ -35,10 +35,8 @@ def index():
 
 @app.route('/<short_id>')
 def redirect_url(short_id):
-    link = ShortUrls.query.filter_by(short_id=short_id)
-    print(link)
-    link = link.first()
-    print(link)
+    result = ShortUrls.query.filter_by(short_id=short_id)
+    link = result.first()
     if link:
         return redirect(link.original_url)
     else:

@@ -1,7 +1,8 @@
+import json
 from datetime import datetime
 from core.models import ShortUrls
 from core import app, db
-from flask import render_template, request, flash, redirect, url_for
+from flask import render_template, request, flash, redirect, url_for, jsonify, Response
 from core.utils import *
 
 @app.route('/', methods=['GET', 'POST'])
@@ -32,6 +33,31 @@ def index():
         return render_template('index.html', short_url=short_url)
 
     return render_template('index.html')
+
+@app.route('/encode', methods=['POST'])
+def encode():
+    url = request.form["url"]
+    result, status = validate_url(url)
+    if status != 200:
+        return Response(json.dumps(result), status=status, content_type="application/json")
+
+    short_id = generate_short_id(url, 6)
+    # Check the short_id does not exist
+    while not ShortUrls.query.filter_by(short_id=short_id):
+        short_id = generate_short_id(url, 6)
+    # Insert DB
+    new_link = ShortUrls(
+        original_url=url, short_id=short_id, created_at=datetime.now())
+    try:
+        db.session.add(new_link)
+        db.session.commit()
+    except:
+        # TODO: maintain the response and error for db insertion
+        pass
+    short_url = request.host_url + short_id
+
+    result = {"short_url": short_url}
+    return Response(json.dumps(result), status=200, content_type="application/json")
 
 @app.route('/<short_id>')
 def redirect_url(short_id):

@@ -12,6 +12,7 @@ python-decouple = "*"
 psycopg2-binary = "*"
 python-dotenv = "*"
 hashids = "*"
+validators = "*"
 
 [dev-packages]
 
